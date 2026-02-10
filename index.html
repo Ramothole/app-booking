@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>SpH Braided | Online Booking</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,600" rel="stylesheet">
+
+  <!-- Bootstrap -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+  <!-- jQuery UI -->
+  <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #f8f9fa;
+    }
+    .navbar-brand {
+      font-weight: 600;
+    }
+    .hero {
+      background: #000;
+      color: #fff;
+      padding: 80px 0;
+      text-align: center;
+    }
+    .form-section {
+      margin-top: -60px;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- NAV -->
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+  <div class="container">
+    <a class="navbar-brand" href="#">SpH Braided</a>
+    <ul class="navbar-nav ml-auto">
+      <li class="nav-item">
+        <a class="nav-link" href="#booking">Book Online</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#info">Info</a>
+      </li>
+    </ul>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <h1>Online Booking</h1>
+    <p>Appointments only · Booking fee required</p>
+  </div>
+</section>
+
+<!-- BOOKING -->
+<section class="container form-section" id="booking">
+  <div class="row">
+    
+    <!-- FORM -->
+    <div class="col-md-7">
+      <div class="card p-4 shadow-sm">
+        <h3 class="mb-4">Book Your Appointment</h3>
+
+        <form enctype="multipart/form-data">
+
+          <div class="form-row">
+            <div class="form-group col-md-6">
+              <label>First Name</label>
+              <input type="text" class="form-control" required>
+            </div>
+            <div class="form-group col-md-6">
+              <label>Last Name</label>
+              <input type="text" class="form-control" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-md-6">
+              <label>Email</label>
+              <input type="email" class="form-control" required>
+            </div>
+            <div class="form-group col-md-6">
+              <label>Phone Number</label>
+              <input type="tel" class="form-control" placeholder="+27..." required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Date</label>
+            <input type="text" id="date" class="form-control" required>
+          </div>
+
+          <div class="form-group">
+            <label>Select Hairdresser</label>
+            <select class="form-control" required>
+              <option value="">-- Choose --</option>
+              <option>Lindi</option>
+              <option>Tshego</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Select Hairstyle</label>
+            <select class="form-control" required>
+              <option value="">-- Choose Style --</option>
+              <option>Knotless Braids</option>
+              <option>Boho Braids</option>
+              <option>Soft Locs</option>
+              <option>Tribal Braids</option>
+              <option>Cornrows</option>
+              <option>Custom Style</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Notes</label>
+            <textarea class="form-control" rows="3" placeholder="Any special requests..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Upload Proof of Payment</label>
+            <input type="file" class="form-control-file" required>
+          </div>
+
+          <button class="btn btn-dark btn-block">Submit Booking</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- INFO -->
+    <div class="col-md-5" id="info">
+      <div class="card p-4 shadow-sm mb-3">
+        <h5>Salon Details</h5>
+        <p><strong>Address:</strong> Birchleigh, Kempton Park</p>
+        <p><strong>Phone:</strong> +27 71 497 5632</p>
+
+        <hr>
+
+        <p><strong>Booking Fee:</strong> R200 (Non-refundable)</p>
+        <p>
+          <strong>Bank:</strong> Capitec<br>
+          <strong>Account Name:</strong> SpH Braided<br>
+          <strong>Account Number:</strong> XXXXXXXX<br>
+          <strong>Reference:</strong> Your Name
+        </p>
+      </div>
+
+      <div class="card p-4 shadow-sm">
+        <h5>Important Info</h5>
+        <ul>
+          <li>Appointments only</li>
+          <li>No booking without payment</li>
+          <li>Late arrival may cancel slot</li>
+          <li>Correct POP required</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="text-center mt-5 mb-4">
+  <p>© <script>document.write(new Date().getFullYear())</script> SpH Braided</p>
+</footer>
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+<script>
+  $("#date").datepicker({
+    dateFormat: "yy-mm-dd",
+    beforeShowDay: function(date) {
+      const day = date.getDay();
+      return [(day === 5 || day === 6 || day === 0)];
+    }
+  });
+</script>
+
+</body>
+</html>

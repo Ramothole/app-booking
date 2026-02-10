@@ -8,6 +8,11 @@
 <ul id="list"></ul>
 
 <script type="module">
+    import { protectPage } from "./js/auth.js";
+    protectPage();
+  </script>
+  
+<script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import {  getFirestore,collection, getDocs,addDoc, serverTimestamp  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
   import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
@@ -19,6 +24,8 @@
   const list = document.getElementById("list");
 
   const snapshot = await getDocs(collection(db, "bookings"));
+
+
   snapshot.forEach(doc => {
     const b = doc.data();
     list.innerHTML += `

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Dashboard</title>
+</head>
+<body>
+<h2>Bookings</h2>
+<ul id="list"></ul>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import {  getFirestore,collection, getDocs,addDoc, serverTimestamp  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+
+  const firebaseConfig = { /* same config */ };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const list = document.getElementById("list");
+
+  const snapshot = await getDocs(collection(db, "bookings"));
+  snapshot.forEach(doc => {
+    const b = doc.data();
+    list.innerHTML += `
+      <li>
+        <strong>${b.firstName} ${b.lastName}</strong><br>
+        ${b.date} – ${b.hairstyle} – ${b.hairdresser}<br>
+        <a href="${b.popUrl}" target="_blank">View POP</a>
+      </li><hr>
+    `;
+  });
+</script>
+</body>
+</html>

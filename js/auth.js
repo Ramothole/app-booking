@@ -18,13 +18,13 @@ export async function login(email, password) {
 export function protectPage() {
   onAuthStateChanged(auth, (user) => {
     if (!user) {
-      window.location.href = "/admin-login.html";
+      window.location.href = "/login.html";
     }
   });
 }
 
 export function logout() {
   signOut(auth).then(() => {
-    window.location.href = "/admin-login.html";
+    window.location.href = "/login.html";
   });
 }

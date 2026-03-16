@@ -1,41 +1,160 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="../assets/css/styles.css">
 </head>
+
 <body>
-<h2>Bookings</h2>
-<ul id="list"></ul>
+  <h2>Bookings</h2>
+  <table border="1" width="100%">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Date</th>
+        <th>Hairstyle</th>
+        <th>Hairdresser</th>
+        <th>POP</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="list"></tbody>
+  </table>
 
-<script type="module">
-    import { protectPage } from "./js/auth.js";
-    protectPage();
+  <script type="module">
+    import { firebaseConfig } from "../js/firebase.js";
   </script>
-  
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import {  getFirestore,collection, getDocs,addDoc, serverTimestamp  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-  import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-  const firebaseConfig = { /* same config */ };
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      getDocs,
+      addDoc,
+      doc,
+      getDoc,
+      deleteDoc,
+      updateDoc,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-  const list = document.getElementById("list");
+    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+    import { firebaseConfig } from "../js/firebase.js";
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-  const snapshot = await getDocs(collection(db, "bookings"));
+    const list = document.getElementById("list");
 
+    const snapshot = await getDocs(collection(db, "bookings"));
 
-  snapshot.forEach(doc => {
-    const b = doc.data();
-    list.innerHTML += `
-      <li>
-        <strong>${b.firstName} ${b.lastName}</strong><br>
-        ${b.date} – ${b.hairstyle} – ${b.hairdresser}<br>
-        <a href="${b.popUrl}" target="_blank">View POP</a>
-      </li><hr>
-    `;
-  });
-</script>
+    window.deleteBooking = async (id) => {
+
+      const bookingRef = doc(db, "bookings", id);
+
+      await deleteDoc(bookingRef);
+
+      location.reload();
+    };
+    window.rejectBooking = async (id) => {
+      const bookingRef = doc(db, "bookings", id);
+      const bookingSnap = await getDoc(bookingRef);
+      const booking = bookingSnap.data();
+
+      if (!booking) return alert("Booking not found");
+
+      const reason = prompt(
+        `Enter reason for rejecting booking of ${booking.firstName} ${booking.lastName}:`,
+        "Unfortunately your booking request could not be accepted."
+      );
+
+      if (!reason) {
+        return alert("Rejection cancelled");
+      }
+
+      const message = `
+      Hi ${booking.firstName} ${booking.lastName} 
+      ${reason}
+      Please choose another date.`;
+
+      const encoded = encodeURIComponent(message);
+      window.open(`https://wa.me/${booking.phone}?text=${encoded}`);
+
+      await addDoc(collection(db, "confirmedBookings"), {
+        ...booking,
+        rejected: true,
+        rejectionReason: reason,
+        rejectedAt: serverTimestamp()
+      });
+
+    };
+    window.acceptBooking = async (id, button) => {
+
+      button.disabled = true;
+      button.textContent = "Processing...";
+
+      const bookingRef = doc(db, "bookings", id);
+      const bookingSnap = await getDoc(bookingRef);
+      const booking = bookingSnap.data();
+
+      // save confirmed booking
+      await addDoc(collection(db, "confirmedBookings"), {
+        ...booking,
+        confirmedAt: serverTimestamp()
+      });
+
+      // block the date
+      await addDoc(collection(db, "confirmedDates"), {
+        date: booking.date,
+        service: booking.hairstyle
+      });
+      await updateDoc(bookingRef, {
+        confirmed: true
+      });
+
+      // WhatsApp confirmation
+      const message = `
+      Hi ${booking.firstName} ${booking.lastName}
+
+      Your booking has been CONFIRMED
+      Service: ${booking.hairstyle}
+      Date: ${booking.date}
+
+      See you soon`;
+
+      const encoded = encodeURIComponent(message);
+
+      window.open(`https://wa.me/${booking.phone}?text=${encoded}`);
+
+      // reload page after a short delay
+      setTimeout(() => location.reload(), 1000);
+    };
+
+    snapshot.forEach(doc => {
+      const b = doc.data();
+      const isConfirmed = b.confirmed ? true : false;
+
+      list.innerHTML += `
+<tr>
+  <td>${b.firstName} ${b.lastName}</td>
+  <td>${b.date}</td>
+  <td>${b.hairstyle}</td>
+  <td>${b.hairdresser}</td>
+  <td>
+    <a href="${b.popUrl}" target="_blank">View POP</a>
+  </td>
+  <td>
+    <button onclick="acceptBooking('${doc.id}', this)" ${isConfirmed ? "disabled style='background:#ccc'" : ""}>
+        ${isConfirmed ? "Confirmed ✅" : "Accept"}
+      </button>
+    <button onclick="rejectBooking('${doc.id}')">Reject</button>
+    <button onclick="deleteBooking('${doc.id}')">Delete</button>
+  </td>
+</tr>
+`;
+    });
+  </script>
 </body>
+
 </html>

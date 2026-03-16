@@ -5,14 +5,8 @@
     <title>SpH Braided | Online Booking</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,600" rel="stylesheet">
-
-    <!-- Bootstrap -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-
-    <!-- jQuery UI -->
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
 
     <style>
@@ -39,7 +33,7 @@
 </head>
 
 <body>
-    <!-- NAV -->
+
     <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
         <div class="container">
             <a class="navbar-brand" href="#">SpH Braided</a>
@@ -54,7 +48,7 @@
         </div>
     </nav>
 
-    <!-- HERO -->
+
     <section class="hero">
         <div class="container">
             <h1>Online Booking</h1>
@@ -62,11 +56,11 @@
         </div>
     </section>
 
-    <!-- BOOKING -->
+
     <section class="container form-section" id="booking">
         <div class="row">
 
-            <!-- FORM -->
+
             <div class="col-md-7">
                 <div class="card p-4 shadow-sm">
                     <h3 class="mb-4">Book Your Appointment</h3>
@@ -129,7 +123,7 @@
 
                         <div class="form-group">
                             <label>Upload Proof of Payment</label>
-                            <input type="file" class="form-control-file" required>
+                            <input type="file" class="form-control-file">
                         </div>
 
                         <button class="btn btn-dark btn-block">Submit Booking</button>
@@ -137,7 +131,7 @@
                 </div>
             </div>
 
-            <!-- INFO -->
+
             <div class="col-md-5" id="info">
                 <div class="card p-4 shadow-sm mb-3">
                     <h5>Salon Details</h5>
@@ -169,14 +163,14 @@
         </div>
     </section>
 
-    <!-- FOOTER -->
+
     <footer class="text-center mt-5 mb-4">
         <p>©
             <script>document.write(new Date().getFullYear())</script> SpH Braided
         </p>
     </footer>
 
-    <!-- Scripts -->
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
@@ -194,7 +188,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { ref,getStorage, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+        import { ref, getStorage, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBe8U8QuaI6PUaEL_z9WAAICE14zeaynnI",
@@ -230,7 +224,7 @@
                 await uploadBytes(storageRef, popFile);
                 const popUrl = await getDownloadURL(storageRef);
 
-                await addDoc(collection(db, "bookings"), {
+                const docRef = await addDoc(collection(db, "bookings"), {
                     firstName,
                     lastName,
                     email,
@@ -244,13 +238,15 @@
                     createdAt: serverTimestamp()
                 });
 
-                // WhatsApp Redirect
+                const bookingId = docRef.id;
+                const adminLink = ` https://braided-community-appointments.netlify.app/admin/login.html`;
                 const message = `Hi Braided Community 🌸%0A
-  Name: ${firstName} ${lastName}%0A
-  Date: ${date}%0A
-  Hairstyle: ${hairstyle}%0A
-  Hairdresser: ${hairdresser}%0A
-  POP uploaded ✔️`;
+                            Name: ${firstName} ${lastName}%0A
+                            Date: ${date}%0A
+                            Hairstyle: ${hairstyle}%0A
+                            Hairdresser: ${hairdresser}%0A
+                            POP uploaded ✔️
+                            checkout the booking:%0A${adminLink}`;
 
                 window.location.href = `https://wa.me/27714975632?text=${message}`;
 

@@ -14,5 +14,5 @@ export const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export { app };
 
-export const db = getFirestore(app, "braided-society");
+export const db = getFirestore(app);
 export const storage = getStorage(app);

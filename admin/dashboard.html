@@ -8,6 +8,7 @@
 
 <body>
   <h2>Bookings</h2>
+
   <table border="1" width="100%">
     <thead>
       <tr>
@@ -19,17 +20,15 @@
         <th>Actions</th>
       </tr>
     </thead>
-    <tbody id="list"></tbody>
+    <tbody id="list">
+      <tr><td colspan="6">Loading...</td></tr>
+    </tbody>
   </table>
 
   <script type="module">
-    import { db } from "../js/firebase.js";
-  </script>
+    import { db, app } from "../js/firebase.js";
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import {
-      getFirestore,
       collection,
       getDocs,
       addDoc,
@@ -40,45 +39,48 @@
       serverTimestamp
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-    import { db } from "../js/firebase.js";
+    import {
+      getAuth,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+    const auth = getAuth(app);
     const list = document.getElementById("list");
 
-    const snapshot = await getDocs(collection(db, "bookings"));
+    console.log("PROJECT:", db.app.options.projectId);
+
+    // ========================
+    // ACTIONS
+    // ========================
 
     window.deleteBooking = async (id) => {
-
-      const bookingRef = doc(db, "bookings", id);
-
-      await deleteDoc(bookingRef);
-
+      await deleteDoc(doc(db, "bookings", id));
       location.reload();
     };
+
     window.rejectBooking = async (id) => {
       const bookingRef = doc(db, "bookings", id);
-      const bookingSnap = await getDoc(bookingRef);
-      const booking = bookingSnap.data();
+      const snap = await getDoc(bookingRef);
+      const booking = snap.data();
 
       if (!booking) return alert("Booking not found");
 
       const reason = prompt(
-        `Enter reason for rejecting booking of ${booking.firstName} ${booking.lastName}:`,
-        "Unfortunately your booking request could not be accepted."
+        `Reason for rejecting ${booking.firstName}?`,
+        "Unfortunately your booking could not be accepted."
       );
 
-      if (!reason) {
-        return alert("Rejection cancelled");
-      }
+      if (!reason) return;
 
+      // WhatsApp
       const message = `
-      Hi ${booking.firstName} ${booking.lastName} 
-      ${reason}
-      Please choose another date.`;
+Hi ${booking.firstName} ${booking.lastName}
+${reason}
+Please choose another date.
+`;
+      window.open(`https://wa.me/${booking.phone}?text=${encodeURIComponent(message)}`);
 
-      const encoded = encodeURIComponent(message);
-      window.open(`https://wa.me/${booking.phone}?text=${encoded}`);
-
+      // Save rejection
       await addDoc(collection(db, "confirmedBookings"), {
         ...booking,
         rejected: true,
@@ -86,73 +88,107 @@
         rejectedAt: serverTimestamp()
       });
 
-    };
-    window.acceptBooking = async (id, button) => {
+      await updateDoc(bookingRef, { rejected: true });
 
+      location.reload();
+    };
+
+    window.acceptBooking = async (id, button) => {
       button.disabled = true;
       button.textContent = "Processing...";
 
       const bookingRef = doc(db, "bookings", id);
-      const bookingSnap = await getDoc(bookingRef);
-      const booking = bookingSnap.data();
+      const snap = await getDoc(bookingRef);
+      const booking = snap.data();
 
-      // save confirmed booking
+      if (!booking) return alert("Booking not found");
+
+      // Save confirmed booking
       await addDoc(collection(db, "confirmedBookings"), {
         ...booking,
         confirmedAt: serverTimestamp()
       });
 
-      // block the date
+      // Block date
       await addDoc(collection(db, "confirmedDates"), {
         date: booking.date,
         service: booking.hairstyle
       });
-      await updateDoc(bookingRef, {
-        confirmed: true
-      });
 
-      // WhatsApp confirmation
+      // Update original
+      await updateDoc(bookingRef, { confirmed: true });
+
+      // WhatsApp
       const message = `
-      Hi ${booking.firstName} ${booking.lastName}
+Hi ${booking.firstName} ${booking.lastName}
 
-      Your booking has been CONFIRMED
-      Service: ${booking.hairstyle}
-      Date: ${booking.date}
+Your booking is CONFIRMED
+Service: ${booking.hairstyle}
+Date: ${booking.date}
 
-      See you soon`;
+See you soon!
+`;
+      window.open(`https://wa.me/${booking.phone}?text=${encodeURIComponent(message)}`);
 
-      const encoded = encodeURIComponent(message);
-
-      window.open(`https://wa.me/${booking.phone}?text=${encoded}`);
-
-      // reload page after a short delay
       setTimeout(() => location.reload(), 1000);
     };
 
-    snapshot.forEach(doc => {
-      const b = doc.data();
-      const isConfirmed = b.confirmed ? true : false;
-      const isRejected = b.rejected ? true : false;
-      list.innerHTML += `
-<tr>
-  <td>${b.firstName} ${b.lastName}</td>
-  <td>${b.date} - ${b.time} </td>
-  <td>${b.hairstyle}</td>
-  <td>${b.hairdresser}</td>
-  <td>
-    <a href="${b.popUrl}" target="_blank">View POP</a>
-  </td>
-  <td>
-    <button onclick="acceptBooking('${doc.id}', this)" ${isConfirmed ? "disabled style='background:#ccc'" : ""}>
-        ${isConfirmed ? "Confirmed ✅" : "Accept"}
-      </button>
-      <button onclick="rejectBooking('${doc.id}', this)" ${isRejected ? "disabled style='background:#ccc'" : ""}>
-        ${isRejected ? "rejected ❌" : "Reject"}
-      </button>
-    <button onclick="deleteBooking('${doc.id}')">Delete</button>
-  </td>
-</tr>
-`;
+    // ========================
+    // LOAD DATA (FIXED PART)
+    // ========================
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = "/login.html";
+        return;
+      }
+
+      console.log("✅ Logged in:", user.email);
+
+      try {
+        const snapshot = await getDocs(collection(db, "bookings"));
+
+        console.log("📦 Bookings:", snapshot.size);
+
+        list.innerHTML = "";
+
+        if (snapshot.empty) {
+          list.innerHTML = "<tr><td colspan='6'>No bookings found</td></tr>";
+          return;
+        }
+
+        snapshot.forEach(docSnap => {
+          const b = docSnap.data();
+
+          const isConfirmed = b.confirmed;
+          const isRejected = b.rejected;
+
+          list.innerHTML += `
+            <tr>
+              <td>${b.firstName} ${b.lastName}</td>
+              <td>${b.date} - ${b.time}</td>
+              <td>${b.hairstyle}</td>
+              <td>${b.hairdresser}</td>
+              <td><a href="${b.popUrl}" target="_blank">View POP</a></td>
+              <td>
+                <button onclick="acceptBooking('${docSnap.id}', this)" ${isConfirmed ? "disabled" : ""}>
+                  ${isConfirmed ? "Confirmed ✅" : "Accept"}
+                </button>
+
+                <button onclick="rejectBooking('${docSnap.id}')" ${isRejected ? "disabled" : ""}>
+                  ${isRejected ? "Rejected ❌" : "Reject"}
+                </button>
+
+                <button onclick="deleteBooking('${docSnap.id}')">Delete</button>
+              </td>
+            </tr>
+            `;
+        });
+
+      } catch (err) {
+        console.error("🔥 Firestore error:", err);
+        list.innerHTML = "<tr><td colspan='6'>Error loading bookings</td></tr>";
+      }
     });
   </script>
 </body>

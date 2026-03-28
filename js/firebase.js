@@ -12,7 +12,7 @@ export const firebaseConfig = {
   measurementId: "G-9JQ5H0DHML"
 };
 const app = initializeApp(firebaseConfig);
-
+export { app };
 
 export const db = getFirestore(app, "braided-society");
 export const storage = getStorage(app);

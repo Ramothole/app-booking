@@ -1,13 +1,9 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import {
-  getAuth,
-  signInWithEmailAndPassword,
-  onAuthStateChanged,
-  signOut
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { db } from "./firebase.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } 
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-export const auth = getAuth(db);
+import { app } from "./firebase.js";
+
+export const auth = getAuth(app);
 
 export async function login(email, password) {
   return signInWithEmailAndPassword(auth, email, password);

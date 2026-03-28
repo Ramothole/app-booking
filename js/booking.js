@@ -24,6 +24,7 @@ document
       const phone = document.getElementById("phone").value;
       const service = document.getElementById("service").value;
       const bookingDate = document.getElementById("date").value;
+      const bookingTime = document.getElementById("time").value;
       const file = document.getElementById("pop").files[0];
 
       // 🔎 CHECK IF DATE ALREADY CONFIRMED
@@ -46,7 +47,7 @@ document
       // 📤 Upload POP
       const storageRef = ref(
         storage,
-        `proof-of-payments/${Date.now()}_${file.name}`
+        `proof-of-payment/${Date.now()}_${file.name}`
       );
 
       await uploadBytes(storageRef, file);
@@ -58,6 +59,7 @@ document
         phone,
         service,
         bookingDate,
+        bookingTime,
         popUrl,
         status: "pending",
         createdAt: serverTimestamp()

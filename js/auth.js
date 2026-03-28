@@ -5,10 +5,9 @@ import {
   onAuthStateChanged,
   signOut
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { firebaseConfig } from "./firebase.js";
+import { db } from "./firebase.js";
 
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
+export const auth = getAuth(db);
 
 export async function login(email, password) {
   return signInWithEmailAndPassword(auth, email, password);

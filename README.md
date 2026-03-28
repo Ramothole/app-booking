@@ -1,4 +1,4 @@
-#  Braided Community – Online Booking
+#  Braided society – Online Booking
 
 Simple salon booking website with:
 - Hairstyle selection
@@ -12,7 +12,7 @@ Simple salon booking website with:
 - jQuery UI Datepicker
 
 ## Hosting
-Can be deployed on:
-- GitHub Pages
-- Netlify
-- Vercel
+
+- firebase - firebase deploy
+- Netlify - 
+

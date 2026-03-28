@@ -48,7 +48,6 @@
         </div>
     </nav>
 
-
     <section class="hero">
         <div class="container">
             <h1>Online Booking</h1>
@@ -56,17 +55,12 @@
         </div>
     </section>
 
-
     <section class="container form-section" id="booking">
         <div class="row">
-
-
             <div class="col-md-7">
                 <div class="card p-4 shadow-sm">
                     <h3 class="mb-4">Book Your Appointment</h3>
-
                     <form enctype="multipart/form-data">
-
                         <div class="form-row">
                             <div class="form-group col-md-6">
                                 <label>First Name</label>
@@ -90,8 +84,17 @@
                         </div>
 
                         <div class="form-group">
-                            <label>Date</label>
-                            <input type="text" id="date" class="form-control" required>
+                            <label for="date">Date</label>
+                            <input type="date" id="date" class="form-control" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="time">Time</label>
+                            <select id="time" class="form-control" required>
+                                <option value="">Select time</option>
+                                <option value="08:00">8:00 AM</option>
+                                <option value="14:00">2:00 PM</option>
+                            </select>
                         </div>
 
                         <div class="form-group">
@@ -104,20 +107,14 @@
                         </div>
 
                         <div class="form-group">
-                            <label>Select Hairstyle</label>
-                            <select class="form-control" required>
+                            <label for="hairstyle">Select Hairstyle</label>
+                            <select id="hairstyle" class="form-control" required>
                                 <option value="">-- Choose Style --</option>
-                                <option>Knotless Braids</option>
-                                <option>Boho Braids</option>
-                                <option>Soft Locs</option>
-                                <option>Tribal Braids</option>
-                                <option>Cornrows</option>
-                                <option>Custom Style</option>
                             </select>
                         </div>
 
                         <div class="form-group">
-                            <label>Notes</label>
+                            <label>Notes (Hairpiece colour or any requests) </label>
                             <textarea class="form-control" rows="3" placeholder="Any special requests..."></textarea>
                         </div>
 
@@ -126,20 +123,17 @@
                             <input type="file" class="form-control-file">
                         </div>
 
-                        <button class="btn btn-dark btn-block">Submit Booking</button>
+                        <button id="submitBtn" class="btn btn-dark btn-block">Submit Booking</button>
                     </form>
                 </div>
             </div>
-
 
             <div class="col-md-5" id="info">
                 <div class="card p-4 shadow-sm mb-3">
                     <h5>Salon Details</h5>
                     <p><strong>Address:</strong> Birchleigh, Kempton Park</p>
                     <p><strong>Phone:</strong> +27 71 497 5632</p>
-
                     <hr>
-
                     <p><strong>Booking Fee:</strong> R200 (Non-refundable)</p>
                     <p>
                         <strong>Bank:</strong> Capitec<br>
@@ -159,69 +153,241 @@
                     </ul>
                 </div>
             </div>
-
         </div>
     </section>
 
-
     <footer class="text-center mt-5 mb-4">
         <p>©
-            <script>document.write(new Date().getFullYear())</script> SpH Braided
+            <script>document.write(new Date().getFullYear())</script> Kagiso Ramothole
         </p>
     </footer>
-
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
-    <script>
-        $("#date").datepicker({
-            dateFormat: "yy-mm-dd",
-            beforeShowDay: function (date) {
-                const day = date.getDay();
-                return [(day === 5 || day === 6 || day === 0)];
-            }
-        });
-    </script>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { ref, getStorage, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-        import { firebaseConfig } from "../js/firebase.js";
-       
+        import {
+            getFirestore,
+            doc,
+            getDoc,
+            collection,
+            getDocs,
+            addDoc,
+            serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import {
+            getStorage,
+            ref,
+            uploadBytes,
+            getDownloadURL
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+        import { firebaseConfig } from "./js/firebase.js";
 
+        // Firebase init
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const storage = getStorage(app);
 
+        // Cache confirmed dates
+        let confirmedSlotsByDate = {};
+
+        // Time options
+        const allTimeSlots = [
+            { value: "08:00", label: "8:00 AM" },
+            { value: "14:00", label: "2:00 PM" }
+        ];
+
+        // Helpers
+        function formatDateLocal(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, "0");
+            const day = String(date.getDate()).padStart(2, "0");
+            return `${year}-${month}-${day}`;
+        }
+
+        function isWeekendAllowed(date) {
+            const day = date.getDay(); // 0=Sun, 5=Fri, 6=Sat
+            return day === 5 || day === 6 || day === 0;
+        }
+
+        function isDateFullyBooked(dateString) {
+            const bookedSlots = confirmedSlotsByDate[dateString] || [];
+            return bookedSlots.includes("08:00") && bookedSlots.includes("14:00");
+        }
+
+        function updateTimeOptions(selectedDate) {
+            const timeSelect = document.getElementById("time");
+            const bookedSlots = confirmedSlotsByDate[selectedDate] || [];
+
+            timeSelect.innerHTML = `<option value="">Select time</option>`;
+
+            const availableSlots = allTimeSlots.filter(slot => !bookedSlots.includes(slot.value));
+
+            if (availableSlots.length === 0) {
+                const option = document.createElement("option");
+                option.value = "";
+                option.textContent = "No available times";
+                option.disabled = true;
+                timeSelect.appendChild(option);
+                return;
+            }
+
+            availableSlots.forEach(slot => {
+                const option = document.createElement("option");
+                option.value = slot.value;
+                option.textContent = slot.label;
+                timeSelect.appendChild(option);
+            });
+        }
+
+        // Load confirmed dates from Firestore
+        async function loadConfirmedDates() {
+            try {
+                confirmedSlotsByDate = {};
+
+                const snapshot = await getDocs(collection(db, "confirmedDates"));
+
+                snapshot.forEach((docSnap) => {
+                    const dateId = docSnap.id; // e.g. 2026-03-28
+                    const data = docSnap.data();
+
+                    // Expecting structure: { slots: { "08:00": true, "14:00": true } }
+                    if (data.slots && typeof data.slots === "object") {
+                        confirmedSlotsByDate[dateId] = Object.keys(data.slots).filter(
+                            time => data.slots[time] === true
+                        );
+                    } else {
+                        confirmedSlotsByDate[dateId] = [];
+                    }
+                });
+
+                console.log("Confirmed slots:", confirmedSlotsByDate);
+            } catch (error) {
+                console.error("Error loading confirmed dates:", error);
+            }
+        }
+
+        // Load hairstyles
+        async function loadHairstyles() {
+            try {
+                const hairstyleSelect = document.getElementById("hairstyle");
+                const hairstyleRef = doc(db, "hairstyles", "braids");
+                const hairstyleSnap = await getDoc(hairstyleRef);
+
+                if (!hairstyleSnap.exists()) {
+                    console.error("Hairstyles document not found");
+                    return;
+                }
+
+                const data = hairstyleSnap.data().types;
+
+                console.log("RAW FIRESTORE DATA:", data); // 👈 debug
+
+                hairstyleSelect.innerHTML = `<option value="">-- Choose Style --</option>`;
+
+                Object.keys(data).forEach((key) => {
+                    const value = data[key];
+
+                    const option = document.createElement("option");
+                    option.value = key;
+                    option.textContent = `${key} R${value}`;
+
+                    hairstyleSelect.appendChild(option);
+                });
+
+            } catch (error) {
+                console.error("Error loading hairstyles:", error);
+            }
+        }
+
+        // Init page
+        async function initBookingForm() {
+            await loadConfirmedDates();
+            await loadHairstyles();
+
+            $("#date").datepicker("destroy");
+
+            $("#date").datepicker({
+                dateFormat: "yy-mm-dd",
+                beforeShowDay: function (date) {
+                    const dateString = formatDateLocal(date);
+
+                    // Only allow Fri, Sat, Sun
+                    if (!isWeekendAllowed(date)) {
+                        return [false];
+                    }
+
+                    // Disable if both slots are booked
+                    if (isDateFullyBooked(dateString)) {
+                        return [false];
+                    }
+
+                    return [true];
+                },
+                onSelect: function (selectedDate) {
+                    updateTimeOptions(selectedDate);
+                }
+            });
+
+            // Also handle manual input fallback
+            document.getElementById("date").addEventListener("change", function () {
+                updateTimeOptions(this.value);
+            });
+        }
+
+        initBookingForm();
+
+        // Submit booking
         const form = document.querySelector("form");
 
         form.addEventListener("submit", async (e) => {
             e.preventDefault();
+            const submitBtn = document.getElementById("submitBtn");
 
+            // ✅ START LOADING
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Processing...";
             const firstName = form[0].value;
             const lastName = form[1].value;
             const email = form[2].value;
             const phone = form[3].value;
             const date = form[4].value;
-            const hairdresser = form[5].value;
-            const hairstyle = form[6].value;
-            const notes = form[7].value;
-            const popFile = form[8].files[0];
+            const time = form[5].value;
+            const hairdresser = form[6].value;
+            const hairstyle = form[7].value;
+            const notes = form[8].value;
+            const popFile = form[9].files[0];
 
             try {
-                const storageRef = ref(storage, `proof-of-payments/${Date.now()}_${popFile.name}`);
+                // Double check slot still available before saving
+                const bookedSlots = confirmedSlotsByDate[date] || [];
+                if (bookedSlots.includes(time)) {
+                    alert("Sorry, this time slot has just been booked. Please choose another time.");
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = "Submit Booking";
+
+                    updateTimeOptions(date);
+                    return;
+                }
+
+                if (!popFile) {
+                    alert("Please upload proof of payment.");
+                    return;
+                }
+
+                const storageRef = ref(storage, `proof-of-payment/${Date.now()}_${popFile.name}`);
                 await uploadBytes(storageRef, popFile);
                 const popUrl = await getDownloadURL(storageRef);
 
-                const docRef = await addDoc(collection(db, "bookings"), {
+                await addDoc(collection(db, "bookings"), {
                     firstName,
                     lastName,
                     email,
                     phone,
                     date,
+                    time,
                     hairdresser,
                     hairstyle,
                     notes,
@@ -230,21 +396,23 @@
                     createdAt: serverTimestamp()
                 });
 
-                const bookingId = docRef.id;
-                const adminLink = ` https://braided-community-appointments.netlify.app/admin/login.html`;
+                const adminLink = `https://braided-community-appointments.netlify.app/admin/login.html`;
                 const message = `Hi Braided Community 🌸%0A
-                            Name: ${firstName} ${lastName}%0A
-                            Date: ${date}%0A
-                            Hairstyle: ${hairstyle}%0A
-                            Hairdresser: ${hairdresser}%0A
-                            POP uploaded ✔️
-                            checkout the booking:%0A${adminLink}`;
+                                    Name: ${firstName} ${lastName}%0A
+                                    Date: ${date}%0A
+                                    Time: ${time}%0A
+                                    Hairstyle: ${hairstyle}%0A
+                                    Hairdresser: ${hairdresser}%0A
+                                    POP uploaded ✔️%0A
+                                    Check out the booking:%0A${adminLink}`;
 
                 window.location.href = `https://wa.me/27714975632?text=${message}`;
 
             } catch (err) {
                 alert("Something went wrong. Please try again.");
                 console.error(err);
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Submit Booking";
             }
         });
     </script>
